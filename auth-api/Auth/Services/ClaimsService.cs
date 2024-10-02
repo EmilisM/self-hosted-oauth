@@ -7,16 +7,21 @@ public static class ClaimsService
 {
     public static IEnumerable<string> GetDestinations(Claim claim)
     {
-        return claim.Type switch
+        switch (claim.Type)
         {
-            OpenIddictConstants.Claims.Name
-            or OpenIddictConstants.Claims.Subject
-                =>
-                [
-                    OpenIddictConstants.Destinations.AccessToken,
-                    OpenIddictConstants.Destinations.IdentityToken
-                ],
-            _ => [OpenIddictConstants.Destinations.AccessToken]
-        };
+            case OpenIddictConstants.Claims.Name or OpenIddictConstants.Claims.Subject: {
+                return [OpenIddictConstants.Destinations.AccessToken, OpenIddictConstants.Destinations.IdentityToken];
+            }
+            case OpenIddictConstants.Claims.Email:
+            {
+                if ((claim.Subject?.HasScope(OpenIddictConstants.Scopes.Email)).GetValueOrDefault()) { 
+                    return [OpenIddictConstants.Destinations.IdentityToken, OpenIddictConstants.Destinations.AccessToken];
+                }
+
+                return [OpenIddictConstants.Destinations.AccessToken];
+            }
+            default:
+                return [OpenIddictConstants.Destinations.AccessToken];
+        }
     }
 }

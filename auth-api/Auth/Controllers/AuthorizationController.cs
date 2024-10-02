@@ -1,6 +1,8 @@
 ﻿using System.Security.Claims;
 using Auth.Services;
 using Microsoft.AspNetCore;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using OpenIddict.Abstractions;
@@ -49,6 +51,7 @@ public class AuthorizationController(
             // Use the client_id as the subject identifier.
             identity.SetClaim(OpenIddictConstants.Claims.Subject, clientId);
             identity.SetClaim(OpenIddictConstants.Claims.Name, name);
+            identity.SetClaim(OpenIddictConstants.Claims.Email, "email@secret.com");
 
             var scopes = request.GetScopes();
             identity.SetScopes(scopes);
@@ -56,7 +59,8 @@ public class AuthorizationController(
             var resources = scopeManager
                 .ListResourcesAsync(identity.GetScopes())
                 .ToBlockingEnumerable();
-            identity.SetResources(resources);
+            
+            identity.SetResources(resources.Prepend(clientId));
             identity.SetDestinations(ClaimsService.GetDestinations);
 
             return SignIn(
@@ -66,5 +70,31 @@ public class AuthorizationController(
         }
 
         throw new NotImplementedException("The specified grant is not implemented.");
+    }
+
+    [HttpGet("~/connect/authorize")]
+    [HttpPost("~/connect/authorize")]
+    public async Task<IActionResult> Authorize()
+    {
+        var request = HttpContext.GetOpenIddictServerRequest() ?? throw new InvalidOperationException("Request cannot be found.");
+        var clientId = request.ClientId!;
+        var responseType = request.ResponseType!;
+
+        var result = await HttpContext.AuthenticateAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+
+        if (!result.Succeeded)
+        {
+            var redirectUri =
+                Uri.EscapeDataString(
+                    $"https://localhost:5000/connect/authorize?client_id={clientId}&response_type={responseType}");
+            
+            return Redirect($"https://localhost:5200?redirect_uri={redirectUri}");
+        }
+        
+        var identity = new ClaimsIdentity(authenticationType: "Mock", nameType: ClaimTypes.Name, roleType: ClaimTypes.Role);
+
+        identity.SetClaim(OpenIddictConstants.Claims.Subject, "mock");
+
+        return SignIn(new ClaimsPrincipal(identity), OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
     }
 }

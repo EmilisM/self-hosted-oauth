@@ -1,10 +1,11 @@
 using Auth.Context;
+using OpenIddict.Abstractions;
 using OpenIddict.Validation.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
 var config = new ConfigurationBuilder()
-    .AddJsonFile("secrets.json")
+    .AddUserSecrets<Program>()
     .AddEnvironmentVariables()
     .Build();
 
@@ -21,12 +22,18 @@ builder
     .AddServer(options =>
     {
         options.SetTokenEndpointUris("connect/token");
+        options.SetAuthorizationEndpointUris("connect/authorize");
         options.SetIntrospectionEndpointUris("connect/introspect");
+        options.AllowAuthorizationCodeFlow();
         options.AllowClientCredentialsFlow();
 
         options.AddDevelopmentEncryptionCertificate().AddDevelopmentSigningCertificate();
 
-        options.UseAspNetCore().EnableTokenEndpointPassthrough();
+        options.UseReferenceAccessTokens();
+
+        options.RegisterScopes(OpenIddictConstants.Scopes.Email);
+
+        options.UseAspNetCore().EnableTokenEndpointPassthrough().EnableAuthorizationEndpointPassthrough();
     })
     .AddValidation(options =>
     {
@@ -35,34 +42,34 @@ builder
         options.UseAspNetCore();
     });
 
-builder.Services.AddAuthentication(options =>
+builder.Services.AddAuthentication().AddCookie(options =>
 {
-    options.DefaultScheme = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme;
+    options.ExpireTimeSpan = TimeSpan.FromMinutes(20);
+    options.SlidingExpiration = true;
+    options.Cookie.Name = "AuthCookie";
 });
 
 builder.Services.AddControllers();
 
 builder.Services.AddAuthorization();
-builder.Services.AddCors();
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("LocalhostOrigin",
+        policyBuilder =>
+        {
+            policyBuilder.WithOrigins("https://localhost:5200").AllowCredentials();
+        });
+});
 
 var app = builder.Build();
 
-if (!app.Environment.IsDevelopment())
-{
-    app.UseExceptionHandler("/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-    app.UseHsts();
-}
-
-app.UseHttpsRedirection();
-
 app.UseRouting();
-app.UseCors();
+app.UseCors("LocalhostOrigin");
 
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-app.MapGet("/", () => "oidc.Auth");
+app.MapGet("/", () => "auth-api");
 
 app.Run();
