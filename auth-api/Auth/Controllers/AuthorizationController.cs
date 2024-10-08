@@ -51,7 +51,6 @@ public class AuthorizationController(
             // Use the client_id as the subject identifier.
             identity.SetClaim(OpenIddictConstants.Claims.Subject, clientId);
             identity.SetClaim(OpenIddictConstants.Claims.Name, name);
-            identity.SetClaim(OpenIddictConstants.Claims.Email, "email@secret.com");
 
             var scopes = request.GetScopes();
             identity.SetScopes(scopes);
@@ -59,8 +58,8 @@ public class AuthorizationController(
             var resources = scopeManager
                 .ListResourcesAsync(identity.GetScopes())
                 .ToBlockingEnumerable();
-            
-            identity.SetResources(resources.Prepend(clientId));
+
+            identity.SetResources(resources);
             identity.SetDestinations(ClaimsService.GetDestinations);
 
             return SignIn(
@@ -76,25 +75,36 @@ public class AuthorizationController(
     [HttpPost("~/connect/authorize")]
     public async Task<IActionResult> Authorize()
     {
-        var request = HttpContext.GetOpenIddictServerRequest() ?? throw new InvalidOperationException("Request cannot be found.");
+        var request =
+            HttpContext.GetOpenIddictServerRequest()
+            ?? throw new InvalidOperationException("Request cannot be found.");
         var clientId = request.ClientId!;
         var responseType = request.ResponseType!;
 
-        var result = await HttpContext.AuthenticateAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+        var result = await HttpContext.AuthenticateAsync(
+            CookieAuthenticationDefaults.AuthenticationScheme
+        );
 
         if (!result.Succeeded)
         {
-            var redirectUri =
-                Uri.EscapeDataString(
-                    $"https://localhost:5000/connect/authorize?client_id={clientId}&response_type={responseType}");
-            
+            var redirectUri = Uri.EscapeDataString(
+                $"https://localhost:5000/connect/authorize?client_id={clientId}&response_type={responseType}"
+            );
+
             return Redirect($"https://localhost:5200?redirect_uri={redirectUri}");
         }
-        
-        var identity = new ClaimsIdentity(authenticationType: "Mock", nameType: ClaimTypes.Name, roleType: ClaimTypes.Role);
+
+        var identity = new ClaimsIdentity(
+            authenticationType: "Mock",
+            nameType: ClaimTypes.Name,
+            roleType: ClaimTypes.Role
+        );
 
         identity.SetClaim(OpenIddictConstants.Claims.Subject, "mock");
 
-        return SignIn(new ClaimsPrincipal(identity), OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
+        return SignIn(
+            new ClaimsPrincipal(identity),
+            OpenIddictServerAspNetCoreDefaults.AuthenticationScheme
+        );
     }
 }

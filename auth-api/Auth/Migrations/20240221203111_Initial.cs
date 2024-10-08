@@ -50,7 +50,7 @@ namespace Auth.Migrations
                     Properties = table.Column<string>(type: "text", nullable: true),
                     RedirectUris = table.Column<string>(type: "text", nullable: true),
                     Requirements = table.Column<string>(type: "text", nullable: true),
-                    Settings = table.Column<string>(type: "text", nullable: true)
+                    Settings = table.Column<string>(type: "text", nullable: true),
                 },
                 constraints: table =>
                 {
@@ -78,7 +78,7 @@ namespace Auth.Migrations
                         nullable: true
                     ),
                     Properties = table.Column<string>(type: "text", nullable: true),
-                    Resources = table.Column<string>(type: "text", nullable: true)
+                    Resources = table.Column<string>(type: "text", nullable: true),
                 },
                 constraints: table =>
                 {
@@ -117,7 +117,7 @@ namespace Auth.Migrations
                         type: "character varying(50)",
                         maxLength: 50,
                         nullable: true
-                    )
+                    ),
                 },
                 constraints: table =>
                 {
@@ -176,7 +176,7 @@ namespace Auth.Migrations
                         type: "character varying(50)",
                         maxLength: 50,
                         nullable: true
-                    )
+                    ),
                 },
                 constraints: table =>
                 {
