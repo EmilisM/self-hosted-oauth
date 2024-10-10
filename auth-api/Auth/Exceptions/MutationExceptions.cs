@@ -2,7 +2,9 @@
 
 namespace Auth.Exceptions;
 
-public class UserNameTakenException() : Exception("Username already taken");
+public class UsernameTakenException() : Exception("Username already taken");
+
+public class InvalidUsernameOrPasswordException() : Exception("Invalid username or password");
 
 public class IdentityResultException(IEnumerable<IdentityError> errors)
     : Exception("Identity error")

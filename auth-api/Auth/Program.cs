@@ -11,6 +11,8 @@ var config = new ConfigurationBuilder().AddUserSecrets<Program>().AddEnvironment
 
 builder.Configuration.AddConfiguration(config);
 
+builder.Services.AddHttpContextAccessor();
+
 builder.Services.AddDbContext<AuthDbContext>();
 
 builder

@@ -1,6 +1,6 @@
 ﻿namespace Auth.Constants;
 
-public class AuthenticationTypeConstants
+public static class AuthenticationTypeConstants
 {
     public const string Password = "password";
 }
