@@ -1,12 +1,8 @@
-﻿using System.Security.Claims;
-using Auth.Constants;
-using Auth.Exceptions;
+﻿using Auth.Exceptions;
 using Auth.GraphQL.Payloads;
 using Auth.Models;
 using Auth.Services;
 using HotChocolate.Language;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
 
 namespace Auth.GraphQL.Mutations;

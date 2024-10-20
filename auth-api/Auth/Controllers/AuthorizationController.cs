@@ -1,8 +1,10 @@
 ﻿using System.Security.Claims;
+using Auth.Models;
 using Auth.Services;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using OpenIddict.Abstractions;
@@ -12,7 +14,8 @@ namespace Auth.Controllers;
 
 public class AuthorizationController(
     IOpenIddictApplicationManager applicationManager,
-    IOpenIddictScopeManager scopeManager
+    IOpenIddictScopeManager scopeManager,
+    UserManager<User> userManager
 ) : ControllerBase
 {
     [HttpPost("~/connect/token"), Produces("application/json")]
@@ -87,20 +90,14 @@ public class AuthorizationController(
 
         if (!result.Succeeded)
         {
-            var redirectUri = Uri.EscapeDataString(
-                $"https://localhost:5000/connect/authorize?client_id={clientId}&response_type={responseType}"
-            );
-
-            return Redirect($"https://localhost:5200?redirect_uri={redirectUri}");
+            return Challenge(CookieAuthenticationDefaults.AuthenticationScheme);
         }
 
         var identity = new ClaimsIdentity(
-            authenticationType: "Mock",
+            authenticationType: TokenValidationParameters.DefaultAuthenticationType,
             nameType: ClaimTypes.Name,
             roleType: ClaimTypes.Role
         );
-
-        identity.SetClaim(OpenIddictConstants.Claims.Subject, "mock");
 
         return SignIn(
             new ClaimsPrincipal(identity),

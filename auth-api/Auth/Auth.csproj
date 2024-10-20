@@ -8,6 +8,15 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <!-- Don't remove this line or your manifest.json won't be copied on publish -->
+        <Content Include="wwwroot\.vite\**" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Folder Include="wwwroot\" />
+    </ItemGroup>
+    
+    <ItemGroup>
         <PackageReference Include="HotChocolate" Version="13.9.14" />
         <PackageReference Include="HotChocolate.AspNetCore" Version="13.9.14" />
         
@@ -32,6 +41,7 @@
         <PackageReference Include="OpenIddict" Version="5.8.0" />
         <PackageReference Include="OpenIddict.AspNetCore" Version="5.8.0" />
         <PackageReference Include="OpenIddict.EntityFrameworkCore" Version="5.8.0" />
+        <PackageReference Include="Vite.AspNetCore" Version="2.1.2" />
     </ItemGroup>
 
     <ItemGroup>
@@ -42,5 +52,30 @@
         <Link>docker-compose.yml</Link>
       </Content>
     </ItemGroup>
+
+    <ItemGroup>
+      <_ContentIncludedByDefault Remove="Views\Index.cshtml" />
+      <_ContentIncludedByDefault Remove="Views\Shared\_Layout.cshtml" />
+      <_ContentIncludedByDefault Remove="Views\_ViewImports.cshtml" />
+      <_ContentIncludedByDefault Remove="Views\_ViewStart.cshtml" />
+    </ItemGroup>
+
+    <!-- Ensure Node environment on Build -->
+    <Target Name="DebugEnsureNodeEnv" BeforeTargets="Build;PublishBuildAssets" Condition=" !Exists('node_modules') ">
+        <!-- Ensure Node.js is installed -->
+        <Exec Command="node --version" ContinueOnError="true">
+            <Output TaskParameter="ExitCode" PropertyName="ErrorCode" />
+        </Exec>
+        <Error Condition="'$(ErrorCode)' != '0'" Text="Node.js is required to build and run this project. To continue, please install Node.js from https://nodejs.org/, and then restart your command prompt or IDE." />
+        <Message Importance="high" Text="Restoring dependencies using 'npm'. This may take several minutes..." />
+        <!-- Install Node packages -->
+        <Exec Command="pnpm install" />
+    </Target>
+
+    <!-- Build the final assets -->
+    <Target Name="PublishBuildAssets" BeforeTargets="Build" Condition=" '$(Configuration)' == 'Release' ">
+        <!-- Build the final assets -->
+        <Exec Command="pnpm run build" />
+    </Target>
     
 </Project>

@@ -1,15 +1,15 @@
 using Auth.Context;
-using Auth.GraphQL.Queries;
 using Auth.Models;
 using Microsoft.AspNetCore.Identity;
 using OpenIddict.Abstractions;
-using OpenIddict.Validation.AspNetCore;
+using Vite.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
 var config = new ConfigurationBuilder().AddUserSecrets<Program>().AddEnvironmentVariables().Build();
-
 builder.Configuration.AddConfiguration(config);
+
+builder.Services.AddRazorPages();
 
 builder.Services.AddHttpContextAccessor();
 
@@ -60,21 +60,12 @@ builder
         options.ExpireTimeSpan = TimeSpan.FromMinutes(20);
         options.SlidingExpiration = true;
         options.Cookie.Name = "AuthCookie";
+        options.LoginPath = "/login";
     });
 
 builder.Services.AddControllers();
 
 builder.Services.AddAuthorization();
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy(
-        "LocalhostOrigin",
-        policyBuilder =>
-        {
-            policyBuilder.WithOrigins("https://localhost:5200").AllowCredentials();
-        }
-    );
-});
 
 builder
     .Services.AddGraphQLServer()
@@ -83,18 +74,30 @@ builder
     .AddAuthTypes()
     .AddMutationConventions();
 
+builder.Services.AddViteServices(options =>
+{
+    options.Server.AutoRun = true;
+    options.Server.Https = true;
+    options.Server.UseReactRefresh = true;
+    options.Server.PackageManager = "pnpm";
+});
+
 var app = builder.Build();
 
+app.UseHttpsRedirection();
+app.UseStaticFiles();
 app.UseRouting();
-app.UseCors("LocalhostOrigin");
 
-app.UseAuthentication();
 app.UseAuthorization();
+app.UseAuthentication();
 
+app.MapRazorPages();
 app.MapControllers();
-app.MapGet("/", () => "auth-api");
 
-app.MapGraphQL();
-app.Run();
+if (app.Environment.IsDevelopment())
+{
+    app.UseWebSockets();
+    app.UseViteDevelopmentServer(true);
+}
 
 app.Run();
